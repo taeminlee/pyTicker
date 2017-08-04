@@ -1,0 +1,2 @@
+# pyTicker
+Cryptocurrency ticker
