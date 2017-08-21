@@ -86,9 +86,14 @@ def get_bitfinex_last(currency_list):
 def get_liqui_last(currency_list):
     BTC_last = OrderedDict()
     for currency in currency_list:
-        res = req.get("https://api.liqui.io/api/3/ticker/"+currency.lower()+"_btc")
+        if currency == "BCH":
+            res = req.get("https://api.liqui.io/api/3/ticker/bcc_btc")
+        else:
+            res = req.get("https://api.liqui.io/api/3/ticker/"+currency.lower()+"_btc")
         if res.ok:
             ticker = json.loads(res.text)
+            if currency == "BCH":
+                BTC_last[currency] = float(ticker['bcc_btc']['last'])
             if currency.lower()+'_btc' in ticker:
                 BTC_last[currency] = float(ticker[currency.lower()+'_btc']['last'])
     return BTC_last
