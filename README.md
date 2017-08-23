@@ -13,6 +13,25 @@ pip install requests prettytable babel pygame
 python app.py
 ```
 
+## 지원 화폐 목록 (list of supported cryptocurrency)
+
+- BTC
+- BHC
+- ETH
+- ETC
+- XRP
+- ZEC
+- XMR
+
+## 지원 거래소 목록 (list of supported exchange)
+
+- Bithumb
+- Coinone
+- CoinIs
+- Poloniex
+- Bitfinex
+- Liqui.io
+
 ## pyTicker 파라미터 (pyTicker parameter)
 
 |command|desc (KO)|desc (EN)|
@@ -30,4 +49,5 @@ python app.py
 ## 참고 포스트 (Related postings)
 
 https://steemit.com/kr-dev/@tmkor/pyticker
+
 https://steemit.com/coinkorea/@tmkor/pyticker-bch-xmr-bitfinex
