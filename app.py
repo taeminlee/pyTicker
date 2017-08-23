@@ -23,10 +23,13 @@ parser.add_argument('-co', action="store_false", default=True, help="disable get
 parser.add_argument('-ci', action="store_false", default=True, help="disable getting ticker from coinis")
 parser.add_argument('-liqui', action='store_false', default=True, help='disable getting ticker from liqui.io')
 parser.add_argument('-alarm', action='store_false', default=True, help='disable alarm')
+parser.add_argument('-xrp', action='store_true', default=False, help='enable XRP(ripple) ticker')
 args = parser.parse_args()
 
-currencies = ["ETH", "DASH", "LTC", "ETC", "ZEC", "XRP", "BCH"]
-cols = ["ETH","DASH","LTC","ETC","ZEC", "XRP","BCH", "BTC"]
+#currencies = ["ETH", "DASH", "LTC", "ETC", "ZEC", "XRP", "BCH"]
+#cols = ["ETH","DASH","LTC","ETC","ZEC", "XRP","BCH", "BTC"]
+currencies = ["ETH", "DASH", "LTC", "ETC", "ZEC", "XMR", "BCH"]
+cols = ["ETH","DASH","LTC","ETC","ZEC", "XMR", "BCH", "BTC"]
 duration = 1 #sec
 
 s = sched.scheduler(time.time, time.sleep)
@@ -34,6 +37,9 @@ s = sched.scheduler(time.time, time.sleep)
 if args.alarm:
     pygame.mixer.init()
     pygame.mixer.music.load("hangout.mp3")
+if args.xrp:
+    currencies.insert(len(currencies)-2, 'XRP')
+    cols.insert(len(cols)-3, 'XRP')
 
 def run_ticker(sc): 
     try:
@@ -73,19 +79,18 @@ def run_ticker(sc):
             t.add_row(['bithumb (BTC)'] + util.make_row(cols, {k:v for (k,v) in bithumb_last.items()}, 6))
             t.add_row(['bithumb (KRW)'] + util.make_row(cols, {k:v for (k,v) in bithumb_KRW_last.items()}, 0, True))
         if args.polo and args.bt:
-            t.add_row(['positive Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BB_diff_last.items() if v > 100}, 4))
-            t.add_row(['negative Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BB_diff_last.items() if v <= 100}, 4))
+            t.add_row(['positive Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v > 100}, 4))
+            t.add_row(['negative Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v <= 100}, 4))
+            t.add_row(['bt100 (KRW)'] + util.make_row(cols, {k:v*100/BP_diff_last[k] for (k,v) in util.removekey(bithumb_KRW_last, 'BTC').items()}, 0, True))
             if(args.alarm):
-                if(len({k:v for (k,v) in BB_diff_last.items() if v <= 98}) > 0):
+                if(len({k:v for (k,v) in BP_diff_last.items() if v <= 98}) > 0):
                     pygame.mixer.music.play()
         if args.bfx and args.bt:
-            t.add_row(['positive Bt-Bfx'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v > 100}, 4))
-            t.add_row(['negative Bt-Bfx'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v <= 100}, 4))
+            t.add_row(['positive Bt-Bfx'] + util.make_row(cols, {k:v for (k,v) in BB_diff_last.items() if v > 100}, 4))
+            t.add_row(['negative Bt-Bfx'] + util.make_row(cols, {k:v for (k,v) in BB_diff_last.items() if v <= 100}, 4))
             if(args.alarm):
-                if(len({k:v for (k,v) in BP_diff_last.items() if v <= 98 and polo_percent_changes[k] > 0}) > 0):
+                if(len({k:v for (k,v) in BB_diff_last.items() if v <= 98 and polo_percent_changes[k] > 0}) > 0):
                     pygame.mixer.music.play()
-        if args.polo and args.bt:
-            t.add_row(['bt100 (KRW)'] + util.make_row(cols, {k:v*100/BP_diff_last[k] for (k,v) in util.removekey(bithumb_KRW_last, 'BTC').items()}, 0, True))
         if args.co:
             t.add_row(['coinone (BTC)'] + util.make_row(cols, {k:v for (k,v) in coinone_last.items()}, 6))
             t.add_row(['coinone (KRW)'] + util.make_row(cols, {k:v for (k,v) in coinone_KRW_last.items()}, 0, True))

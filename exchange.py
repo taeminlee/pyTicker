@@ -58,7 +58,12 @@ def get_coinis_last(currency_list):
     btc_krw = ticker["data"]['ClosePrice']
     KRW_last["BTC"] = float(btc_krw)
     for currency in currency_list:
-        res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode="+currency+"KRW")
+        if currency == "ETH" or currency == "ETC":
+            continue
+        if currency == "BCH":
+            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BCCKRW")
+        else:
+            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode="+currency+"KRW")
         if(res.ok):
             ticker = json.loads(res.text)
             if(len(ticker['data']) > 0):
