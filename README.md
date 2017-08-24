@@ -8,9 +8,9 @@ a monitoring and normalization tool for cryptocurrency that is being handled in 
 
 ### Windows
 
-[다운로드] 후 pyTicker.exe 실행
+[다운로드](https://github.com/taeminlee/pyTicker/releases/) 후 pyTicker.exe 실행
 
-[Download], execute pyTicker.exe
+[Download](https://github.com/taeminlee/pyTicker/releases/), execute pyTicker.exe
 
 ### Linux
 
