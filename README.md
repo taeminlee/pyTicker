@@ -6,11 +6,19 @@ a monitoring and normalization tool for cryptocurrency that is being handled in 
 
 ## 설치 및 실행 (Installation and execution)
 
+### Windows
+
+[다운로드] 후 pyTicker.exe 실행
+
+[Download], execute pyTicker.exe
+
+### Linux
+
 ```bash
 git clone https://github.com/taeminlee/pyTicker
 cd pyTicker
 pip install requests prettytable babel pygame
-python app.py
+python pyTicker.py
 ```
 
 ## 지원 화폐 목록 (list of supported cryptocurrency)

@@ -41,6 +41,8 @@ if args.xrp:
     currencies.insert(len(currencies)-2, 'XRP')
     cols.insert(len(cols)-3, 'XRP')
 
+print("init pyTicker.. It takes several seconds..")
+
 def run_ticker(sc): 
     try:
         if args.polo:
