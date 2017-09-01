@@ -17,13 +17,24 @@ import util
 
 parser = argparse.ArgumentParser(description="cryptocurrency ticker comparer suite")
 parser.add_argument('-polo', action="store_false", default=True, help="disable getting ticker from poloniex")
-parser.add_argument('-bfx', action="store_true", default=False, help="enable getting ticker from poloniex")
+parser.add_argument('-btx', action="store_true", default=False, help="enable getting ticker from bittrex")
+parser.add_argument('-bfx', action="store_true", default=False, help="enable getting ticker from bitfinex")
 parser.add_argument('-bt', action="store_false", default=True, help="disable getting ticker from bithumb")
 parser.add_argument('-co', action="store_false", default=True, help="disable getting ticker from coinone")
 parser.add_argument('-ci', action="store_false", default=True, help="disable getting ticker from coinis")
 parser.add_argument('-liqui', action='store_false', default=True, help='disable getting ticker from liqui.io')
 parser.add_argument('-alarm', action='store_false', default=True, help='disable alarm')
+parser.add_argument('-eth', action='store_true', default=False, help='disable ETH ticker')
+parser.add_argument('-dash', action='store_true', default=False, help='disable DASH ticker')
+parser.add_argument('-ltc', action='store_true', default=False, help='disable LTC ticker')
+parser.add_argument('-etc', action='store_true', default=False, help='disable ETC ticker')
+parser.add_argument('-zec', action='store_true', default=False, help='disable ZEC ticker')
+parser.add_argument('-xmr', action='store_true', default=False, help='disable XMR ticker')
+parser.add_argument('-bch', action='store_true', default=False, help='disable BCH ticker')
 parser.add_argument('-xrp', action='store_true', default=False, help='enable XRP(ripple) ticker')
+parser.add_argument('-qtum', action='store_true', default=False, help='enable QTUM ticker')
+parser.add_argument('-steem', action='store_true', default=False, help='enable STEEM ticker')
+parser.add_argument('-eos', action='store_true', default=False, help='enable EOS ticker')
 args = parser.parse_args()
 
 #currencies = ["ETH", "DASH", "LTC", "ETC", "ZEC", "XRP", "BCH"]
@@ -37,9 +48,36 @@ s = sched.scheduler(time.time, time.sleep)
 if args.alarm:
     pygame.mixer.init()
     pygame.mixer.music.load("hangout.mp3")
+
+def add_currency(currency):
+    currencies.insert(len(currencies)-2, currency)
+    cols.insert(len(cols)-3, currency)
+def remove_currency(currency):
+    currencies.remove(currency)
+    cols.remove(currency)
+
+if args.eth:
+    remove_currency('ETH')
+if args.dash:
+    remove_currency('DASH')
+if args.ltc:
+    remove_currency('LTC')
+if args.etc:
+    remove_currency('ETC')
+if args.zec:
+    remove_currency('ZEC')
+if args.xmr:
+    remove_currency('XMR')
+if args.bch:
+    remove_currency('BCH')
 if args.xrp:
-    currencies.insert(len(currencies)-2, 'XRP')
-    cols.insert(len(cols)-3, 'XRP')
+    add_currency('XRP')
+if args.qtum:
+    add_currency('QTUM')
+if args.steem:
+    add_currency('STEEM')
+if args.eos:
+    add_currency('EOS')
 
 print("init pyTicker.. It takes several seconds..")
 
@@ -47,6 +85,8 @@ def run_ticker(sc):
     try:
         if args.polo:
             polo_last, polo_USDT_last, polo_percent_changes, polo_json = exchange.get_polo_last(currencies)
+        if args.btx:
+            bittrex_last, bittrex_USDT_last = exchange.get_bittrex_last(currencies)
         if args.bfx:
             bitfinex_last, bitfinex_USDT_last = exchange.get_bitfinex_last(currencies)
         if args.bt:
@@ -59,6 +99,8 @@ def run_ticker(sc):
             liqui_last = exchange.get_liqui_last(currencies)
         if args.polo and args.bt:
             BP_diff_last = util.get_diff_last(bithumb_last, polo_last)
+        if args.btx and args.bt:
+            BBT_diff_last = util.get_diff_last(bithumb_last, bittrex_last)
         if args.bfx and args.bt:
             BB_diff_last = util.get_diff_last(bithumb_last, bitfinex_last)
         if args.polo and args.co:
@@ -77,13 +119,16 @@ def run_ticker(sc):
         if args.bfx:
             t.add_row(['bitfinex (BTC)'] + util.make_row(cols, {k:v for (k,v) in bitfinex_last.items()}, 6))
             t.add_row(['bitfinex (USDT)'] + util.make_row(cols, {k:v for (k,v) in bitfinex_USDT_last.items()}, 2, True))
+        if args.btx:
+            t.add_row(['bittrex (BTC)'] + util.make_row(cols, {k:v for (k,v) in bittrex_last.items()}, 6))
+            t.add_row(['bittrex (USDT)'] + util.make_row(cols, {k:v for (k,v) in bittrex_USDT_last.items()}, 2, True))
         if args.bt:
             t.add_row(['bithumb (BTC)'] + util.make_row(cols, {k:v for (k,v) in bithumb_last.items()}, 6))
             t.add_row(['bithumb (KRW)'] + util.make_row(cols, {k:v for (k,v) in bithumb_KRW_last.items()}, 0, True))
         if args.polo and args.bt:
             t.add_row(['positive Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v > 100}, 4))
             t.add_row(['negative Bt-Po'] + util.make_row(cols, {k:v for (k,v) in BP_diff_last.items() if v <= 100}, 4))
-            t.add_row(['bt100 (KRW)'] + util.make_row(cols, {k:v*100/BP_diff_last[k] for (k,v) in util.removekey(bithumb_KRW_last, 'BTC').items()}, 0, True))
+            t.add_row(['bt100 (KRW)'] + util.make_row(cols, {k:bithumb_KRW_last[k]*100/v for (k,v) in BP_diff_last.items()}, 0, True))
             if(args.alarm):
                 if(len({k:v for (k,v) in BP_diff_last.items() if v <= 98}) > 0):
                     pygame.mixer.music.play()
@@ -93,6 +138,12 @@ def run_ticker(sc):
             if(args.alarm):
                 if(len({k:v for (k,v) in BB_diff_last.items() if v <= 98 and polo_percent_changes[k] > 0}) > 0):
                     pygame.mixer.music.play()
+        if args.btx and args.bt:
+            t.add_row(['positive Bt-Btx'] + util.make_row(cols, {k:v for (k,v) in BBT_diff_last.items() if v > 100}, 4))
+            t.add_row(['negative Bt-Btx'] + util.make_row(cols, {k:v for (k,v) in BBT_diff_last.items() if v <= 100}, 4))
+            if(args.alarm):
+                if(len({k:v for (k,v) in BBT_diff_last.items() if v <= 98 and polo_percent_changes[k] > 0}) > 0):
+                    pygame.mixer.music.play()
         if args.co:
             t.add_row(['coinone (BTC)'] + util.make_row(cols, {k:v for (k,v) in coinone_last.items()}, 6))
             t.add_row(['coinone (KRW)'] + util.make_row(cols, {k:v for (k,v) in coinone_KRW_last.items()}, 0, True))
@@ -100,10 +151,9 @@ def run_ticker(sc):
                 if(len({k:v for (k,v) in CP_diff_last.items() if v <= 98 and polo_percent_changes[k] > 0}) > 0):
                     pygame.mixer.music.play()
         if args.co and args.polo:
-            t.add_row(['co100 (KRW)'] + util.make_row(cols, {k:v*100/CP_diff_last[k] for (k,v) in util.removekey(coinone_KRW_last, 'BTC').items()}, 0, True))
-        if args.co and args.polo:
             t.add_row(['positive Co-Po'] + util.make_row(cols, {k:v for (k,v) in CP_diff_last.items() if v > 100}, 4))
             t.add_row(['negative Co-Po'] + util.make_row(cols, {k:v for (k,v) in CP_diff_last.items() if v <= 100}, 4))
+            t.add_row(['co100 (KRW)'] + util.make_row(cols, {k:coinone_KRW_last[k]*100/v for (k,v) in CP_diff_last.items()}, 0, True))
         if args.ci: 
             t.add_row(['coinis (BTC)'] + util.make_row(cols, {k:v for (k,v) in coinis_last.items()}, 6))
             t.add_row(['coinis (KRW)'] + util.make_row(cols, {k:v for (k,v) in coinis_KRW_last.items()}, 0, True))

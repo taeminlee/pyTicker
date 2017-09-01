@@ -1,0 +1,1 @@
+python pyTicker.py -btx -bfx -xrp -qtum -eos -steem

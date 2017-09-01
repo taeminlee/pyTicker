@@ -30,6 +30,8 @@ python pyTicker.py
 - XRP
 - ZEC
 - XMR
+- QTUM
+- EOS
 
 ## 지원 거래소 목록 (list of supported exchange)
 

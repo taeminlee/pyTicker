@@ -27,6 +27,8 @@ def get_bithumb_last(currency_list):
     KRW_last = OrderedDict()
     btc_res = req.get("https://api.bithumb.com/public/ticker")
     btc_ticker = json.loads(get_bithumb_json(btc_res.text))
+    if btc_ticker['status'] == 5600:
+        return BTC_last, KRW_last;
     btc_krw = btc_ticker['data']['closing_price']
     KRW_last["BTC"] = float(btc_krw)
     for currency in currency_list:
@@ -55,6 +57,8 @@ def get_coinis_last(currency_list):
     KRW_last = OrderedDict()
     res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BTCKRW")
     ticker = json.loads(res.text)
+    if ticker['result'] == -1 :
+        return BTC_last, KRW_last;
     btc_krw = ticker["data"]['ClosePrice']
     KRW_last["BTC"] = float(btc_krw)
     for currency in currency_list:
@@ -70,6 +74,31 @@ def get_coinis_last(currency_list):
                 BTC_last[currency] = float(ticker['data']['ClosePrice']) / float(btc_krw)
                 KRW_last[currency] = float(ticker['data']['ClosePrice'])
     return BTC_last, KRW_last
+
+def get_bittrex_last(currency_list):
+    #https://bittrex.com/api/v1.1/public/getmarketsummaries   
+    BTC_last = OrderedDict()
+    USDT_last = OrderedDict()
+    res = req.get("https://bittrex.com/api/v1.1/public/getmarketsummaries")
+    if res.ok != True :
+        return BTC_last, USDT_last
+    bittrex = json.loads(res.text)
+    if bittrex['success'] != True:
+        return BTC_last, USDT_last
+    USDT_last['BTC'] = float(get_bittrex_currency('USDT-BTC', bittrex)['Last'])
+    for currency in currency_list:
+        if currency == 'BCH':
+            currency = 'BCC'
+        x = get_bittrex_currency("BTC-"+currency, bittrex)
+        if x != None:
+            BTC_last[currency] = float(x['Last'])
+    return BTC_last, USDT_last
+
+def get_bittrex_currency(currency, json):
+    x = list(filter(lambda x: x['MarketName'] == currency, json['result']))
+    if len(x) == 0:
+        return None
+    return x[0]
 
 def get_bitfinex_last(currency_list):
     BTC_last = OrderedDict()
@@ -91,6 +120,8 @@ def get_bitfinex_last(currency_list):
 def get_liqui_last(currency_list):
     BTC_last = OrderedDict()
     for currency in currency_list:
+        if currency == "STEEM":
+            continue
         if currency == "BCH":
             res = req.get("https://api.liqui.io/api/3/ticker/bcc_btc")
         else:
