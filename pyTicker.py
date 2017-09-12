@@ -19,10 +19,11 @@ parser = argparse.ArgumentParser(description="cryptocurrency ticker comparer sui
 parser.add_argument('-polo', action="store_false", default=True, help="disable getting ticker from poloniex")
 parser.add_argument('-btx', action="store_true", default=False, help="enable getting ticker from bittrex")
 parser.add_argument('-bfx', action="store_true", default=False, help="enable getting ticker from bitfinex")
+parser.add_argument('-hitbtc', action="store_true", default=False, help="enable getting ticker from hitbtc")
+parser.add_argument('-liqui', action='store_true', default=False, help='enable getting ticker from liqui.io')
 parser.add_argument('-bt', action="store_false", default=True, help="disable getting ticker from bithumb")
 parser.add_argument('-co', action="store_false", default=True, help="disable getting ticker from coinone")
 parser.add_argument('-ci', action="store_false", default=True, help="disable getting ticker from coinis")
-parser.add_argument('-liqui', action='store_false', default=True, help='disable getting ticker from liqui.io')
 parser.add_argument('-alarm', action='store_false', default=True, help='disable alarm')
 parser.add_argument('-eth', action='store_true', default=False, help='disable ETH ticker')
 parser.add_argument('-dash', action='store_true', default=False, help='disable DASH ticker')
@@ -34,6 +35,7 @@ parser.add_argument('-bch', action='store_true', default=False, help='disable BC
 parser.add_argument('-xrp', action='store_true', default=False, help='enable XRP(ripple) ticker')
 parser.add_argument('-qtum', action='store_true', default=False, help='enable QTUM ticker')
 parser.add_argument('-steem', action='store_true', default=False, help='enable STEEM ticker')
+parser.add_argument('-sbd', action='store_true', default=False, help='enable SBD ticker')
 parser.add_argument('-eos', action='store_true', default=False, help='enable EOS ticker')
 args = parser.parse_args()
 
@@ -76,6 +78,8 @@ if args.qtum:
     add_currency('QTUM')
 if args.steem:
     add_currency('STEEM')
+if args.sbd:
+    add_currency('SBD')
 if args.eos:
     add_currency('EOS')
 
@@ -89,6 +93,8 @@ def run_ticker(sc):
             bittrex_last, bittrex_USDT_last = exchange.get_bittrex_last(currencies)
         if args.bfx:
             bitfinex_last, bitfinex_USDT_last = exchange.get_bitfinex_last(currencies)
+        if args.hitbtc:
+            hitbtc_last = exchange.get_hitbtc_last(currencies)
         if args.bt:
             bithumb_last, bithumb_KRW_last = exchange.get_bithumb_last(currencies)
         if args.co:
@@ -109,6 +115,8 @@ def run_ticker(sc):
             CIP_diff_last = util.get_diff_last(coinis_last, polo_last)
         if args.polo and args.liqui:
             LP_diff_last = util.get_diff_last(liqui_last, polo_last)
+        if args.polo and args.hitbtc:
+            HP_diff_last = util.get_diff_last(hitbtc_last, polo_last)
 
         t = PrettyTable(["Index"] + cols)
         if args.polo:
@@ -165,6 +173,11 @@ def run_ticker(sc):
         if args.liqui and args.polo:
             t.add_row(['positive Li-Po'] + util.make_row(cols, {k:v for (k,v) in LP_diff_last.items() if v > 100}, 4))
             t.add_row(['negative Li-Po'] + util.make_row(cols, {k:v for (k,v) in LP_diff_last.items() if v <= 100}, 4))
+        if args.hitbtc:
+            t.add_row(['hitbtc (BTC)'] + util.make_row(cols, {k:v for (k,v) in hitbtc_last.items()}, 6))
+        if args.hitbtc and args.polo:
+            t.add_row(['positive HB-Po'] + util.make_row(cols, {k:v for (k,v) in HP_diff_last.items() if v > 100}, 4))
+            t.add_row(['negative HB-Po'] + util.make_row(cols, {k:v for (k,v) in HP_diff_last.items() if v <= 100}, 4))
 
         t.align = "l"
         

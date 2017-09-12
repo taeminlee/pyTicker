@@ -88,8 +88,9 @@ def get_bittrex_last(currency_list):
     USDT_last['BTC'] = float(get_bittrex_currency('USDT-BTC', bittrex)['Last'])
     for currency in currency_list:
         if currency == 'BCH':
-            currency = 'BCC'
-        x = get_bittrex_currency("BTC-"+currency, bittrex)
+            x = get_bittrex_currency("BTC-BCC", bittrex)
+        else:
+            x = get_bittrex_currency("BTC-"+currency, bittrex)
         if x != None:
             BTC_last[currency] = float(x['Last'])
     return BTC_last, USDT_last
@@ -113,8 +114,9 @@ def get_bitfinex_last(currency_list):
             res = req.get("https://api.bitfinex.com/v1/pubticker/"+currency+"BTC")
         if res.ok:
             ticker = json.loads(res.text)
-            BTC_last[currency] = float(ticker['last_price'])
-            USDT_last[currency] = float(ticker['last_price']) * btc_USDT
+            if 'last_price' in ticker:
+                BTC_last[currency] = float(ticker['last_price'])
+                USDT_last[currency] = float(ticker['last_price']) * btc_USDT
     return BTC_last, USDT_last
 
 def get_liqui_last(currency_list):
@@ -134,6 +136,14 @@ def get_liqui_last(currency_list):
                 BTC_last[currency] = float(ticker[currency.lower()+'_btc']['last'])
     return BTC_last
 
+def get_hitbtc_last(currency_list):
+    BTC_last = OrderedDict()
+    res = req.get("https://api.hitbtc.com/api/1/public/ticker")
+    hitbtc = json.loads(res.text)
+    for currency in currency_list:
+        if currency+"BTC" in hitbtc:
+            BTC_last[currency] = float(hitbtc[currency+"BTC"]['last'])
+    return BTC_last
 
 def get_cex_io_last():
     USDT_last = OrderedDict()
