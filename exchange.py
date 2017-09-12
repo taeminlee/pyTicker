@@ -122,7 +122,7 @@ def get_bitfinex_last(currency_list):
 def get_liqui_last(currency_list):
     BTC_last = OrderedDict()
     for currency in currency_list:
-        if currency == "STEEM":
+        if currency == "STEEM" or currency == "SBD":
             continue
         if currency == "BCH":
             res = req.get("https://api.liqui.io/api/3/ticker/bcc_btc")
