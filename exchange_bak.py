@@ -33,7 +33,7 @@ class Exchange:
             self.get_last(currency_list)
             self.last_time = datetime.datetime.now()
             return True
-        except Exception as e:
+        except:
             self.debug("ERROR : %s get_last : %s" % (self.name, self.msg))
             return False
     def run(self, currency_list):
@@ -127,28 +127,22 @@ class Coinone(Exchange, JsonLoaderRQ, KRWLast):
 class Upbit(Exchange, JsonLoaderAsync, KRWLast, BTCLast, USDTLast):
     name = "Upbit"
     symbol = "up"
-    version = "Upbit 1.1 JsonLoaderAsync"
-    history = ["1.1 / 20180104 / fix BCH(BCC)"]
-    patch = {"BCH":"BCC"}
+    version = "Upbit 1.0 JsonLoaderAsync"
     def get_json(self, currency_list):
         # https://crix-api-endpoint.upbit.com/v1/crix/trades/ticks?code=CRIX.UPBIT.KRW-BTC&count=1
         # https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/1?code=CRIX.UPBIT.KRW-BTC&count=1
-        currency_list = list(map(lambda c:self.patch[c] if c in self.patch else c,currency_list))
         self.krw_urls = dict(map(lambda currency:(currency, "https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/60?code=CRIX.UPBIT.KRW-%s&count=1" % currency), currency_list))
         self.usdt_urls = dict(map(lambda currency:(currency, "https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/60?code=CRIX.UPBIT.USDT-%s&count=1" % currency), currency_list))
         self.btc_urls = dict(map(lambda currency:(currency, "https://crix-api-endpoint.upbit.com/v1/crix/candles/minutes/60?code=CRIX.UPBIT.BTC-%s&count=1" % currency), currency_list))
-        self.krw_jsons = self.load_multiple_json(self.krw_urls, option='CRIX')
-        self.usdt_jsons = self.load_multiple_json(self.usdt_urls, option='CRIX')
-        self.btc_jsons = self.load_multiple_json(self.btc_urls, option='CRIX')
+        self.krw_jsons = self.load_multiple_json(self.krw_urls)
+        self.usdt_jsons = self.load_multiple_json(self.usdt_urls)
+        self.btc_jsons = self.load_multiple_json(self.btc_urls)
     def get_last(self, currency_list):
         extype_dict = {'usdt_last' : (self.usdt_jsons, self.USDT_last), 'krw_last' : (self.krw_jsons, self.KRW_last), 'btc_last' : (self.btc_jsons, self.BTC_last)}
         for currency in currency_list:
             for extype in list(extype_dict.items()):
-                currency_str = currency
-                if currency in self.patch:
-                    currency_str = self.patch[currency]
                 #print(extype)
-                for json in filter(lambda json:len(json) > 0 and json['currency'] == currency_str, extype[1][0]):
+                for json in filter(lambda json:json['currency'] == currency, extype[1][0]):
                     self.msg = "%s %s" % (extype[0], currency)
                     extype[1][1][currency] = json['tradePrice']
 
@@ -157,6 +151,7 @@ class GateIO(Exchange, JsonLoaderRQ, BTCLast, USDTLast, ETHLast):
     symbol = "gate"
     version = "Gate.IO 1.0 JsonLoaderRQ"
     def get_json(self, currency_list):
+        self.json = {}
         self.rawJson = self.load_single_json("http://data.gate.io/api2/1/tickers")
         self.json = dict(map(lambda dict:(dict[0], dict[1]['last']), self.rawJson.items()))
     def get_last(self, currency_list):
@@ -169,178 +164,20 @@ class GateIO(Exchange, JsonLoaderRQ, BTCLast, USDTLast, ETHLast):
                     self.msg = "get_last parse : %s %s" % (currency, kv[0])
                     kv[1][currency] = float(self.json['%s_%s' % (currency.lower(), kv[0])])
 
-class Cpdax(Exchange, JsonLoaderRQ, KRWLast):
-    name = "CPDAX"
-    symbol = "cpdax"
-    version = "CPDAX 1.0 JsonLoaderRQ"
-    def get_json(self, currency_list):
-        self.rawJson = self.load_single_json("https://api.cpdax.com/v1/tickers")
-        self.json = dict(map(lambda dict:(dict['currency_pair'], dict['last']), self.rawJson))
-    def get_last(self, currency_list):
-        self.msg = "get_last"
-        for currency in currency_list:
-            currency_str = "%s-KRW" % currency
-            self.msg = "get_last : %s" % currency
-            if currency_str in self.json:
-                self.KRW_last[currency] = float(self.json[currency_str])
-
-class Kucoin(Exchange, JsonLoaderRQ, BTCLast, USDTLast, ETHLast):
-    name = "Kucoin"
-    symbol = "KCS"
-    version = "Kucoin 1.0 JsonLoaderRQ"
-    def get_json(self, currency_list):
-        self.json = {}
-        self.rawJson = self.load_single_json("https://api.kucoin.com/v1/open/tick")
-        dp = filter(lambda dict:'lastDealPrice' in dict, self.rawJson['data'])
-        self.json = dict(map(lambda dict:(dict['symbol'], dict['lastDealPrice']), dp))
-    def get_last(self, currency_list):
-        self.msg = "get_last"
-        patch = {}
-        for currency in currency_list:
-            currency_str = currency
-            if currency in patch:
-                currency_str = patch[currency]
-            self.msg = "get_last : %s" % currency_str
-            for kv in {"BTC":self.BTC_last, "USDT":self.USDT_last, "ETH":self.ETH_last}.items():
-                self.msg = "get_last : %s %s " % (currency, kv[0])
-                if "%s-%s" % (currency_str, kv[0]) in self.json:
-                    self.msg = "get_last parse : %s-%s" % (currency, kv[0])
-                    kv[1][currency] = float(self.json['%s-%s' % (currency_str, kv[0])])
-
-class Coinrail(Exchange, JsonLoaderAsync, BTCLast, KRWLast):
-    name = "Coinrail"
-    symbol = "CR"
-    version = "Coinrail 1.0 JsonLoaderAsync"
-    def get_json(self, currency_list):
-        C = currency_list
-        self.krw_urls = dict(map(lambda currency:("%s-krw" % currency.lower(), "https://api.coinrail.co.kr/public/last/order?currency=%s-krw" % currency.lower()), C))
-        self.btc_urls = dict(map(lambda currency:("%s-btc" % currency.lower(), "https://api.coinrail.co.kr/public/last/order?currency=%s-btc" % currency.lower()), C))
-        self.urls = {}
-        self.urls.update(self.krw_urls)
-        self.urls.update(self.btc_urls)
-        temp_jsons = self.load_multiple_json(self.urls)
-        self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
-    def get_last(self, currency_list):
-        C = currency_list
-        for kv in {'krw':self.KRW_last, 'btc':self.BTC_last}.items():
-            for currency in C:
-                self.msg = "get_last : %s-%s" % (currency, kv[0])
-                if "%s-%s"%(currency.lower(), kv[0]) in self.json:
-                    if 'last_price' in self.json["%s-%s"%(currency.lower(), kv[0])]:
-                        kv[1][currency] = float(self.json["%s-%s"%(currency.lower(), kv[0])]['last_price'])
-
-class Bittrex(Exchange, JsonLoaderRQ, BTCLast, ETHLast, USDTLast):
-    name = "Bittrex"
-    symbol = "BTX"
-    versin = "Bittrex 1.0 JsonLoaderRQ"
-    def get_json(self, currency_list):
-        self.rawJson = self.load_single_json("https://bittrex.com/api/v1.1/public/getmarketsummaries")
-        self.json = dict(map(lambda x:(x['MarketName'], x), self.rawJson['result']))
-
-class Coinnest(Exchange, JsonLoaderAsync, KRWLast):
-    name = "Coinnest"
-    symbol = "CN"
-    version = "Coinnest 1.0 JsonLoaderAsync"
-    def get_json(self, currency_list):
-        self.krw_urls = dict(map(lambda currency:("%s" % currency.lower(), "https://api.coinnest.co.kr/api/pub/ticker?coin=%s" % currency.lower()), currency_list))
-        temp_jsons = self.load_multiple_json(self.krw_urls)
-        self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
-    def get_last(self, currency_list):
-        for currency in currency_list:
-            self.msg = "get_last : %s" % (currency)
-            if "%s"%(currency.lower()) in self.json:
-                if 'last' in self.json["%s"%(currency.lower())]:
-                    self.KRW_last[currency] = float(self.json["%s"%(currency.lower())]['last'])
-
-def get_bittrex_currency(currency, json):
-    x = list(filter(lambda x: x['MarketName'] == currency, json['result']))
-    if len(x) == 0:
-        return None
-    return x[0]
-
-def get_bittrex_last(currency_list):
-    #https://bittrex.com/api/v1.1/public/getmarketsummaries   
+def get_polo_last(currency_list):
     BTC_last = OrderedDict()
+    percent_changes = OrderedDict()
     USDT_last = OrderedDict()
-    res = req.get("https://bittrex.com/api/v1.1/public/getmarketsummaries")
-    if res.ok != True :
-        return BTC_last, USDT_last
-    bittrex = json.loads(res.text)
-    if bittrex['success'] != True:
-        return BTC_last, USDT_last
-    USDT_last['BTC'] = float(get_bittrex_currency('USDT-BTC', bittrex)['Last'])
+    res = req.get("https://poloniex.com/public?command=returnTicker")
+    polo = json.loads(res.text)
+    USDT_last['BTC'] = float(polo["USDT_BTC"]['last'])
     for currency in currency_list:
-        if currency == 'BCH':
-            x = get_bittrex_currency("BTC-BCC", bittrex)
-        else:
-            x = get_bittrex_currency("BTC-"+currency, bittrex)
-        if x != None:
-            BTC_last[currency] = float(x['Last'])
-    return BTC_last, USDT_last
-
-def Bithumb(Exchange, JsonLoaderAsync, KRWLast):
-    name = "Bithumb"
-    symbol = "bt"
-    version = "Bithumb 1.0 JsonLoaderAsync"
-    def get_json(self, currency_list):
-        self.krw_urls = dict(map(lambda currency:(currency, self.get_bithumb_url(currency), currency_list)))
-        temp_jsons = self.load_multiple_json(self.krw_urls)
-        self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
-    def get_bithumb_url(self, currency):
-        if(currency == "BTC"):
-            return "https://api.bithumb.com/public/ticker"
-        else:
-            return "https://api.bithumb.com/public/ticker/"+currency
-    def get_last(self, currency_list):
-        for currency in currency_list:
-            if "data" in json[currency] and "closing_price" in json[currency]['data']:
-                self.KRW_last[currency] = float(self.json[currency]['data']['closing_price'])
-
-def Coinis(Exchange, JsonLoaderAsync, KRWLast):
-    name = "Coinis"
-    symbol = "CI"
-    version = "Coinis 1.0 JsonLoaderAsync"
-    def get_json(self, currency_list):
-        patch = {'BCH':'BCC'}
-        ignore = ['ETH','ETC']
-        C = filter(lambda currency:currency not in ignore,currency_list)
-        krw_urls = {}
-        for currency in C:
-            if(currency in patch):
-                krw_urls[currency] = "http://coinis.co.kr/api/sise/ticker?itemcode=%sKRW" % patch[currency]
-            else:
-                krw_urls[currency] = "http://coinis.co.kr/api/sise/ticker?itemcode=%sKRW" % currency
-        temp_jsons = self.load_multiple_json(self.krw_urls)
-        self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
-    def get_last(self, currency_list):
-        for currency in currency_list:
-            if 'data' in json[currency] and 'ClosePrice' in json[currency]['data']:
-                self.KRW_last[currency] = float(self.json[currency]['data']['ClosePrice'])
-
-def get_coinis_last(currency_list):
-    BTC_last = OrderedDict()
-    KRW_last = OrderedDict()
-    res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BTCKRW")
-    ticker = json.loads(res.text)
-    if ticker['result'] == -1 :
-        return BTC_last, KRW_last
-    btc_krw = ticker["data"]['ClosePrice']
-    KRW_last["BTC"] = float(btc_krw)
-    for currency in currency_list:
-        if currency == "ETH" or currency == "ETC":
-            continue
-        if currency == "BCH":
-            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BCCKRW")
-        else:
-            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode="+currency+"KRW")
-        if(res.ok):
-            ticker = json.loads(res.text)
-            if(len(ticker['data']) > 0):
-                BTC_last[currency] = float(ticker['data']['ClosePrice']) / float(btc_krw)
-                KRW_last[currency] = float(ticker['data']['ClosePrice'])
-    return BTC_last, KRW_last
-
-#class Bittrex(Exchange, JsonLoaderRQ, )
+        if "BTC_"+currency in polo:
+            percent_changes[currency] = float(polo["BTC_"+currency]['percentChange'])
+            BTC_last[currency] = float(polo["BTC_"+currency]['last'])
+        if "USDT_"+currency in polo:
+            USDT_last[currency] = float(polo["USDT_"+currency]['last'])
+    return BTC_last, USDT_last, percent_changes, polo
 
 def get_bithumb_json(str):
     m = re.search('{.*}', str)
@@ -362,6 +199,86 @@ def get_bithumb_last(currency_list):
             BTC_last[currency] = float(ticker['data']['closing_price']) / float(btc_krw)
             KRW_last[currency] = float(ticker['data']['closing_price'])
     return BTC_last, KRW_last
+
+def get_coinone_last(currency_list):
+    BTC_last = OrderedDict()
+    KRW_last = OrderedDict()
+    res = req.get("https://api.coinone.co.kr/ticker/?format=json&currency=btn")
+    ticker = json.loads(res.text)
+    btc_krw = ticker["btc"]['last']
+    KRW_last["BTC"] = float(btc_krw)
+    for currency in currency_list:
+        if currency.lower() in ticker:
+            BTC_last[currency] = float(ticker[currency.lower()]['last']) / float(btc_krw)
+            KRW_last[currency] = float(ticker[currency.lower()]['last'])
+    return BTC_last, KRW_last
+
+def get_coinis_last(currency_list):
+    BTC_last = OrderedDict()
+    KRW_last = OrderedDict()
+    res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BTCKRW")
+    ticker = json.loads(res.text)
+    if ticker['result'] == -1 :
+        return BTC_last, KRW_last;
+    btc_krw = ticker["data"]['ClosePrice']
+    KRW_last["BTC"] = float(btc_krw)
+    for currency in currency_list:
+        if currency == "ETH" or currency == "ETC":
+            continue
+        if currency == "BCH":
+            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode=BCCKRW")
+        else:
+            res = req.get("http://coinis.co.kr/api/sise/ticker?itemcode="+currency+"KRW")
+        if(res.ok):
+            ticker = json.loads(res.text)
+            if(len(ticker['data']) > 0):
+                BTC_last[currency] = float(ticker['data']['ClosePrice']) / float(btc_krw)
+                KRW_last[currency] = float(ticker['data']['ClosePrice'])
+    return BTC_last, KRW_last
+
+def get_coinrail_last(currency_list):
+    BTC_last = OrderedDict()
+    KRW_last = OrderedDict()
+    btc_res = req.get("https://api.coinrail.co.kr/public/last/order?currency=btc-krw")
+    btc_ticker = json.loads(btc_res.text)
+    if btc_ticker['error_code'] != 0:
+        return BTC_last, KRW_last
+    btc_krw = btc_ticker['last_price']
+    KRW_last["BTC"] = float(btc_krw)
+    for currency in currency_list:
+        res = req.get("https://api.coinrail.co.kr/public/last/order?currency=%s-krw" % currency.lower())
+        if(res.ok):
+            ticker = json.loads(res.text)
+            if ticker['error_code'] == 0:
+                BTC_last[currency] = float(ticker['last_price']) / float(btc_krw)
+                KRW_last[currency] = float(ticker['last_price'])
+    return BTC_last, KRW_last
+
+def get_bittrex_last(currency_list):
+    #https://bittrex.com/api/v1.1/public/getmarketsummaries   
+    BTC_last = OrderedDict()
+    USDT_last = OrderedDict()
+    res = req.get("https://bittrex.com/api/v1.1/public/getmarketsummaries")
+    if res.ok != True :
+        return BTC_last, USDT_last
+    bittrex = json.loads(res.text)
+    if bittrex['success'] != True:
+        return BTC_last, USDT_last
+    USDT_last['BTC'] = float(get_bittrex_currency('USDT-BTC', bittrex)['Last'])
+    for currency in currency_list:
+        if currency == 'BCH':
+            x = get_bittrex_currency("BTC-BCC", bittrex)
+        else:
+            x = get_bittrex_currency("BTC-"+currency, bittrex)
+        if x != None:
+            BTC_last[currency] = float(x['Last'])
+    return BTC_last, USDT_last
+
+def get_bittrex_currency(currency, json):
+    x = list(filter(lambda x: x['MarketName'] == currency, json['result']))
+    if len(x) == 0:
+        return None
+    return x[0]
 
 def get_bitfinex_last(currency_list):
     BTC_last = OrderedDict()
@@ -417,3 +334,8 @@ def get_cex_io_last():
         USDT_last["visa"] = USDT_last["buy"] * 1.035
         USDT_last["fee"] = USDT_last["visa"] * 1.02
     return USDT_last
+
+def get_exchange_rate():
+    res = req.get("http://api.fixer.io/latest?base=USD&symbols=KRW")
+    USD2KRW = json.loads(res.text)["rates"]["KRW"]
+    return USD2KRW

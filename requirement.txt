@@ -1,0 +1,5 @@
+prettytable
+pygame
+requests
+aiohttp
+babel

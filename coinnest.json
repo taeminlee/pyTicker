@@ -1,0 +1,8 @@
+{
+    "norm_unit":"BTC",
+    "target_units":["KRW"],
+    "show_units":["KRW","BTC"],
+    "exchanges":["coinnest","binance","upbit"],
+    "currencies":["ETH","ETC","GAS","GTO","BTG","LTC","ADA","HSR","BCH","KNC","WTC","NEO","MCO","BTC"],
+    "RNPR_pairs":[["coinnest","binance"],["coinnest","upbit"]]
+}

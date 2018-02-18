@@ -9,6 +9,12 @@ def get_diff_last(x, y):
             diff_last[currency] = (x[currency] / y[currency]) * 100
     return diff_last
 
+def get_normalized_price(prices, unit_price):
+    NP = OrderedDict()
+    for kv in prices.items():
+        NP[kv[0]] = kv[1] / unit_price
+    return NP
+
 def get_diff_history(balance, last):
     diff_history = OrderedDict()
     for currency in balance.keys():
@@ -22,18 +28,20 @@ def orderby(d, reverseOpt=True):
         o[k]=v
     return o.items()
 
+def make_cell(currency, val, roundOpt=-1,currencyOpt=False):
+    if (roundOpt > 0 and val >= 0.0001):
+        val = round(val, roundOpt)
+    if roundOpt == 0:
+        val = int(val)
+    if currencyOpt == True:
+        val = format_decimal(val, locale="en_US")
+    return val
+
 def make_row(cols,vals,roundOpt=-1,currencyOpt=False):
     o = []
     for col in cols:
         if col in vals:
-            temp = vals[col]
-            if roundOpt > 0:
-                temp = round(temp, roundOpt)
-            if roundOpt == 0:
-                temp = int(temp)
-            if currencyOpt == True:
-                temp = format_decimal(temp, locale="en_US")
-            o.append(temp)
+            o.append(make_cell(col, vals[col], roundOpt, currencyOpt))
         else:
             o.append("")
     return o
