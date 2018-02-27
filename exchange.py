@@ -48,6 +48,11 @@ class Poloniex(Exchange, JsonLoaderRQ, BTCLast, USDTLast, PercentChanges):
     def get_json(self, currency_list):
         self.json = self.load_single_json("https://poloniex.com/public?command=returnTicker")
     def get_last(self, currency_list):
+<<<<<<< HEAD
+=======
+        self.msg = "usdt_last btc"
+        self.USDT_last['BTC'] = float(self.json["USDT_BTC"]['last'])
+>>>>>>> 55117834540b99ab47cb28e8104b0352a3bde45c
         for currency in currency_list:
             if "BTC_"+currency in self.json:
                 self.msg = "percent_changes %s" % currency

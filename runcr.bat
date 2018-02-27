@@ -1,0 +1,1 @@
+python pyTicker2.py coinrail.json

@@ -1,0 +1,8 @@
+{
+    "norm_unit":"BTC",
+    "target_units":["KRW","BTC"],
+    "show_units":["KRW","USDT","BTC"],
+    "exchanges":["coinone","binance","upbit","gopax","cpdax"],
+    "currencies":["ETH","LTC","MTL","BCH","SNT","STORJ","OMG","ETC","QTUM","POWR","DGD","BTC","XLM","CVC","ENG","GTO","EOS","KNC"],
+    "RNPR_pairs":[["coinone","binance"],["upbit","binance"],["gopax","binance"],["cpdax","binance"]]
+}

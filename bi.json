@@ -1,0 +1,8 @@
+{
+    "norm_unit":"BTC",
+    "target_units":["BTC"],
+    "show_units":["USDT","BTC"],
+    "exchanges":["binance","upbit"],
+    "currencies":["ETH","BCH","BTC"],
+    "RNPR_pairs":[["upbit","binance"]]
+}
