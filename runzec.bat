@@ -1,1 +1,0 @@
-python pyTicker.py -co -hitbtc

@@ -1,1 +1,0 @@
-python pyTicker.py -btx -ci -btg -xrp -dash -zec -xmr -bt -cr -binance -qtum

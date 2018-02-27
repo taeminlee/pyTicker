@@ -1,1 +1,0 @@
-python pyTicker2.py upbit2.json

@@ -1,1 +1,0 @@
-python pyTicker2.py coinnest.json
