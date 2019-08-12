@@ -16,6 +16,19 @@ class Exchange:
     rst = False
     json_time = datetime.datetime.now()
     last_time = datetime.datetime.now()
+    def to_json(self):
+        j = {"name" : self.name, "symbol" :  self.symbol, "version" : self.version}
+        if(issubclass(type(self), KRWLast)):
+            j['KRW_last'] = self.KRW_last
+        if(issubclass(type(self), BTCLast)):
+            j['BTC_last'] = self.BTC_last
+        if(issubclass(type(self), USDTLast)):
+            j['USDT_last'] = self.USDT_last
+        if(issubclass(type(self), ETHLast)):
+            j['ETH_last'] = self.ETH_last
+        if(issubclass(type(self), BNBLast)):
+            j['BNB_last'] = self.BNB_last
+        return j
     def get_json(self, currency_list): # 거래소 별 json 다운로드 로직
         pass
     def get_last(self, currency_list): # 거래소 별 last price parsing 로직
@@ -80,33 +93,33 @@ class Binance(Exchange, JsonLoaderRQ, BTCLast, USDTLast, ETHLast, BNBLast):
                     self.msg = "get_last parse : %s%s" % (currency, kv[0])
                     kv[1][currency] = float(self.json['%s%s' % (currency_str, kv[0])])
 
-class Gopax(Exchange, JsonLoaderAsync, KRWLast):
-    name = "Gopax"
-    symbol = "go"
-    version = "Gopax 1.0 JsonLoaderAsync"
-    supported_currencies = []
-    def __init__(self):
-        #https://api.gopax.co.kr/trading-pairs
-        loop = asyncio.get_event_loop()
-        task = asyncio.ensure_future(self.load_single_json(url = "https://api.gopax.co.kr/trading-pairs"))
-        loop.run_until_complete(task)
-        for record in task.result():
-          self.supported_currencies.append(record["baseAsset"])
-    def get_json(self, currency_list):
-        #https://api.gopax.co.kr/trading-pairs/BTC-KRW/ticker
-        C = set(self.supported_currencies).intersection(set(currency_list))
-        C = ['BTC'] + currency_list
-        self.krw_urls = dict(map(lambda currency:(currency, "https://api.gopax.co.kr/trading-pairs/%s-KRW/ticker" % currency), C))
-        temp_jsons = self.load_multiple_json(self.krw_urls)
-        self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
-    def get_last(self, currency_list):
-        C = ['BTC'] + currency_list
-        for currency in C:
-           self.msg = "get_last : %s" % currency
-           #print(self.json)
-           if currency in self.json:
-               if 'price' in self.json[currency]:
-                   self.KRW_last[currency] = self.json[currency]['price']
+# class Gopax(Exchange, JsonLoaderAsync, KRWLast):
+#     name = "Gopax"
+#     symbol = "go"
+#     version = "Gopax 1.0 JsonLoaderAsync"
+#     supported_currencies = []
+#     def __init__(self):
+#         #https://api.gopax.co.kr/trading-pairs
+#         loop = asyncio.get_event_loop()
+#         task = asyncio.ensure_future(self.load_single_json(url = "https://api.gopax.co.kr/trading-pairs"))
+#         loop.run_until_complete(task)
+#         for record in task.result():
+#           self.supported_currencies.append(record["baseAsset"])
+#     def get_json(self, currency_list):
+#         #https://api.gopax.co.kr/trading-pairs/BTC-KRW/ticker
+#         C = set(self.supported_currencies).intersection(set(currency_list))
+#         C = ['BTC'] + currency_list
+#         self.krw_urls = dict(map(lambda currency:(currency, "https://api.gopax.co.kr/trading-pairs/%s-KRW/ticker" % currency), C))
+#         temp_jsons = self.load_multiple_json(self.krw_urls)
+#         self.json = dict(map(lambda json:(json['currency'], json), temp_jsons))
+#     def get_last(self, currency_list):
+#         C = ['BTC'] + currency_list
+#         for currency in C:
+#            self.msg = "get_last : %s" % currency
+#            #print(self.json)
+#            if currency in self.json:
+#                if 'price' in self.json[currency]:
+#                    self.KRW_last[currency] = self.json[currency]['price']
 
 class Coinone(Exchange, JsonLoaderRQ, KRWLast):
     name = "Coinone"
@@ -328,34 +341,34 @@ class Bitfinex(Exchange, JsonLoaderRQ, USDTLast, BTCLast, ETHLast):
             if "t%sETH" % currency in self.json:
                 self.ETH_last[currency] = float(self.json["t%sETH" % currency][7])
 
-class Liqui(Exchange, JsonLoaderRQ, USDTLast, BTCLast, ETHLast):
-    name = "Liqui"
-    symbol = "LI"
-    version = "Liqui 1.0 JsonLoaderRQ"
-    supported_currencies = []
-    ignore = ['STEEM']
-    def __init__(self):
-        #https://api.liqui.io/api/3/info
-        json = self.load_single_json("https://api.liqui.io/api/3/info")
-        self.supported_currencies = list(json['pairs'].keys())
-    def get_list(self, currency_list, base_currency):
-        return list(map(lambda c:"%s_%s" % (c.lower(), base_currency), filter(lambda c:"%s_%s" % (c.lower(), base_currency) in self.supported_currencies, currency_list)))
-    def get_json(self, currency_list):
-        btc_C = self.get_list(currency_list, "btc")
-        usdt_C = self.get_list(currency_list, "usdt")
-        eth_C = self.get_list(currency_list, "etc")
-        url = "https://api.liqui.io/api/3/ticker/%s" % "-".join(btc_C + usdt_C + eth_C)
-        self.json = self.load_single_json(url)
-    def get_last(self, currency_list):
-        for currency in currency_list:
-            if currency in self.ignore:
-                continue
-            if "%s_btc" % currency.lower() in self.json:
-                self.BTC_last[currency] = float(self.json["%s_btc" % currency.lower()]['last'])
-            if "%s_usdt" % currency.lower() in self.json:
-                self.USDT_last[currency] = float(self.json["%s_usdt" % currency.lower()]['last'])
-            if "%s_eth" % currency.lower() in self.json:
-                self.ETH_last[currency] = float(self.json["%s_eth" % currency.lower()]['last'])
+# class Liqui(Exchange, JsonLoaderRQ, USDTLast, BTCLast, ETHLast):
+#     name = "Liqui"
+#     symbol = "LI"
+#     version = "Liqui 1.0 JsonLoaderRQ"
+#     supported_currencies = []
+#     ignore = ['STEEM']
+#     def __init__(self):
+#         #https://api.liqui.io/api/3/info
+#         json = self.load_single_json("https://api.liqui.io/api/3/info")
+#         self.supported_currencies = list(json['pairs'].keys())
+#     def get_list(self, currency_list, base_currency):
+#         return list(map(lambda c:"%s_%s" % (c.lower(), base_currency), filter(lambda c:"%s_%s" % (c.lower(), base_currency) in self.supported_currencies, currency_list)))
+#     def get_json(self, currency_list):
+#         btc_C = self.get_list(currency_list, "btc")
+#         usdt_C = self.get_list(currency_list, "usdt")
+#         eth_C = self.get_list(currency_list, "etc")
+#         url = "https://api.liqui.io/api/3/ticker/%s" % "-".join(btc_C + usdt_C + eth_C)
+#         self.json = self.load_single_json(url)
+#     def get_last(self, currency_list):
+#         for currency in currency_list:
+#             if currency in self.ignore:
+#                 continue
+#             if "%s_btc" % currency.lower() in self.json:
+#                 self.BTC_last[currency] = float(self.json["%s_btc" % currency.lower()]['last'])
+#             if "%s_usdt" % currency.lower() in self.json:
+#                 self.USDT_last[currency] = float(self.json["%s_usdt" % currency.lower()]['last'])
+#             if "%s_eth" % currency.lower() in self.json:
+#                 self.ETH_last[currency] = float(self.json["%s_eth" % currency.lower()]['last'])
 
 class Hitbtc(Exchange, JsonLoaderRQ, USDTLast, BTCLast, ETHLast):
     name = "Hitbtc"

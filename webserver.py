@@ -2,7 +2,7 @@ from kyoukai import Kyoukai, HTTPRequestContext
 import json
 
 def run_server():
-    kyk = Kyoukai("example_app")
+    kyk = Kyoukai("PyTicker2 API Server")
 
     @kyk.route("/")
     async def index(ctx: HTTPRequestContext):
@@ -10,8 +10,8 @@ def run_server():
 
     @kyk.route("/data")
     async def data(ctx: HTTPRequestContext):
-        with open('upbit.json', 'r') as upbit_json:
-            return json.dumps(json.load(upbit_json)), 200, {"Content-Type": "application/json"}
+        with open('dump.json', 'r') as pyticker_json:
+            return json.dumps(json.load(pyticker_json)), 200, {"Content-Type": "application/json"}
         
     kyk.run()
 

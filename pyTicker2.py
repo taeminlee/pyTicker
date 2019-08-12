@@ -24,6 +24,7 @@ def load_config(file):
     default = {
         'refresh':1,
         'slack_alarm':80,
+        'server':False
     }
     with io.open(file, 'r') as fp:
         j = json.load(fp)
@@ -37,9 +38,16 @@ def load_exchange(name):
             'upbit':exchange.Upbit(),
             'cpdax':exchange.Cpdax(),
             'kucoin':exchange.Kucoin(),
-            'gopax':exchange.Gopax(),
+            #'gopax':exchange.Gopax(),
             'coinrail':exchange.Coinrail(),
-            'coinnest':exchange.Coinnest()}[name]
+            'coinnest':exchange.Coinnest(),
+            'bittrex':exchange.Bittrex(),
+            'poloniex':exchange.Poloniex(),
+            'bithumb':exchange.Bithumb(),
+            'bitfinex':exchange.Bitfinex(),
+            #'liqui':exchange.Liqui(),
+            'hitbtc':exchange.Hitbtc(),
+            'cexio':exchange.CexIO()}[name]
 
 def parse_config(cfg):
     EX = dict(map(lambda name:(name,load_exchange(name)),cfg['exchanges']))
@@ -130,19 +138,24 @@ def print_table(EX,C,SU,TU,nu,RP, SA):
     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print(t)
 
+def dump_json(EX):
+    with io.open('dump.json', 'w') as out:
+        json.dump(list(map(lambda ex:ex.to_json(), EX.values())), out)
+
 if __name__ == "__main__": 
     if(args.input == None):
         print("Please provide config json file.\n\re.g.) python pyTicker2.py default.json")
     else:
         cfg = load_config(args.input)
         EX, C, nu, TU, SU, RP, SA = parse_config(cfg)
-
         while(True):
             try:
                 #async_run(EX, C)
                 run(EX,C)
-                print_table(EX=EX,C=C,SU=SU,TU=TU,nu=nu,RP=RP, SA = SA)
+                if(cfg['server']):
+                    dump_json(EX)
+                else:
+                    print_table(EX=EX,C=C,SU=SU,TU=TU,nu=nu,RP=RP, SA = SA)
             except Exception as e:
                 print("failed with error code: {}".format(e))
             time.sleep(cfg['refresh'])
-            

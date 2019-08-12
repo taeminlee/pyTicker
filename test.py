@@ -3,20 +3,14 @@ import exchange
 import asyncio
 import data
 import importlib
+import pprint
 #%%
 def test(ex,C):
     try:
         ex.get_json(C)
         ex.get_last(C)
         print(ex.name + " OK")
-        if(issubclass(type(ex), data.KRWLast)):
-            print("    ", ex.name, 'KRW', ex.KRW_last)
-        if(issubclass(type(ex), data.BTCLast)):
-            print("    ", ex.name, 'BTC', ex.BTC_last)
-        if(issubclass(type(ex), data.USDTLast)):
-            print("    ", ex.name, 'USDT', ex.USDT_last)
-        if(issubclass(type(ex), data.ETHLast)):
-            print("    ", ex.name, 'ETH', ex.ETH_last)
+        pprint.pprint(ex.to_json())
     except Exception as e:
         print(ex.name + " FAILED")
         print("    failed " +ex.name+ " with error code: {}".format(e))
